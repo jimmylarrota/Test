@@ -1,0 +1,1326 @@
+mqsichangeproperties broker8 -b webadmin -o HTTPConnector -n port -v 50099
+mqsireportproperties broker8 -b webadmin -o HTTPConnector -a
+mqsichangeproperties broker8 -b webadmin -o server -n enabled,enableSSL -v true,false
+mqsireportproperties broker8 -b webadmin -o server -a
+mqsichangebroker broker8 -s active
+mqsiwebuseradmin broker8 -c -u USERWEB -r BUSUSER -a h0l4mund0
+/*cambiar la contraseña
+mqsiwebuseradmin broker8 -m -u USERWEB -a newPASSWEB
+/*eliminar usuario*/
+mqsiwebuseradmin broker8 -d -u USERWEB
+
+/*crear seguridad en la interfaz*/
+mqsichangebroker MB8BROKER -s active
+
+
+mqsicreateconfigurableservice broker8 -c DataCaptureStore -o captureStoreMonitoring -n backoutQueue,commitCount,commitIntervalSecs,dataSourceName,egForRecord,egForView,queueName,schema,threadPoolSize,useCoordinatedTransaction  -v "SYSTEM.BROKER.DC.BACKOUT","10","5","ORA","MonitoringDB","MonitoringDB","SYSTEM.BROKER.DC.RECORD","broker8","10","false"
+
+
+mqsicreateexecutiongroup broker8 -e MonitoringDB
+mqsisetdbparms BRKLAB -n ORADSN -u ADMESB -p ESB2010*
+
+
+runmqsc -e CCBESB_QAS_QM01 < /esb/instalaciones/Framework-CCB/DeploymentProcess/Scripts/CreatePublishSubscribe_v1.0.esb
+runmqsc -e IB9QMGR <C:\$user\Adaptadores\FrameworkB9\DeploymentProcess\Scripts\CreateQueueScript.esb
+
+runmqsc -e DAVWMDEV1_QM
+
+/*Asignar un puero a un grupo de ejecución*/
+
+-- asignando los puertos para el consumo de los grupos de ejecución
+mqsichangeproperties BROKERNAME -o ComIbmJVMManager -e Bpm02_Bpm_TchAdapter jvmMaxHeapSize -v 268435456
+mqsichangeproperties MB7BROKDEV1 -e ServComp_dummies -o HTTPConnector -n explicitlySetPortNumber -v 8090
+mqsichangeproperties IB9NODE -e dummies -o HTTPConnector -n port -v 7080
+mqsichangeproperties BROKERNAME -e Bpm02_Bpm_TchAdapter -o HTTPConnector -n port -v 7890
+mqsireportproperties MB7BROKDEV1 -e ServComp_dummies -o HTTPConnector -n port
+mqsireportproperties MB7BROKDEV1 -e Bpm02_Bpm_TchAdapter -o HTTPConnector -n port
+mqsichangeproperties MB7BROKDEV1 -e ServComp_dummies -o HTTPConnector -n explicitlySetPortNumber -v 0
+mqsireportproperties MB7BROKDEV1 -e ServComp_dummies -o HTTPConnector -r
+mqsichangeproperties MB7BROKDEV1 -e ServComp_dummies -o HTTPConnector -n port -v 0
+
+mqsichangeproperties CCBESB_DEV_NODE01 -e SVC02_ServComp_ImpuestoRegistro -o HTTPConnector -n explicitlySetPortNumber -v 7800 
+
+
+mqsireportproperties MB7BROKDEV1 -b httplistener -o HTTPListener -n startListener
+
+
+mqsichangeproperties MB7BROKDEV1 -e ServComp_dummies -o HTTPConnector -n explicitlySetPortNumber -v 7081
+mqsireload MB7BROKDEV1 -e ServComp_dummies
+mqsireportproperties MB7BROKDEV1 -e Bpm02_Bpm_TchAdapter -o HTTPConnector -n port
+
+
+mqsireportproperties MB7BROKDEV1 -e Ins01_AppInversiones_TchAdapter -o HTTPConnector -n port
+
+--Ver que por que puerto esta escuchando un determiando grupo de ejecució--
+mqsireportproperties MB7BROKDEV1 -e ServComp_dummies -o HTTPConnector -n port
+
+mqsireportproperties IB9NODECCB -e WS02_CCB_AdpTch -o HTTPConnector -n port
+mqsireportproperties IB9NODECCB -e WS02_CCB_AdpTch -o HTTPConnector -n port
+mqsireportproperties IB9NODE -e WS01_AdpTch -o HTTPConnector -n port
+mqsireportproperties CCBESB_DEV_NODE01 -e WS06_PSE_TchAdapter -o HTTPConnector -n port
+
+
+mqsichangeproperties CCBESB_DEV_NODE01 -e DUMMY_PSE -o HTTPConnector -n explicitlySetPortNumber -v 7080
+mqsichangeproperties CCBESB_DEV_NODE01 -e WS06_PSE_TchAdapter -o HTTPConnector -n port -v 7805
+mqsireportproperties CCBESB_DEV_NODE01 -e WS06_PSE_TchAdapter -o HTTPConnector -r
+mqsireportproperties MB7BROKDEV1 -b httplistener -o HTTPListener -a
+
+
+mqsichangeproperties CCBESB_DEV_NODE01 -e DUMMY_PSE -o HTTPConnector -n explicitlySetPortNumber -v 7080
+mqsichangeproperties CCBESB_DEV_NODE01 -e DUMMY_PSE -o HTTPConnector -n port -v 7080
+-- reinicia el grupo de ejecución
+mqsireportproperties CCBESB_DEV_NODE01 -e WS06_PSE_TchAdapter -o HTTPConnector -r
+-- comprueba el cambio
+mqsireportproperties CCBESB_DEV_NODE01 -e WS06_PSE_TchAdapter -o HTTPConnector -r
+
+
+-- comandos para reiniciar un grupo
+mqsistopmsgflow CCBESB_DEV_NODE01 -e WS01_SIREP_IntAdapter
+mqsistartmsgflow CCBESB_DEV_NODE01 -e WS01_SIREP_IntAdapter
+
+
+
+
+mqsistopmsgflow CCBESB_DEV_NODE01 -e DUMMY_PSE
+mqsistartmsgflow CCBESB_DEV_NODE01 -e DUMMY_PSE
+
+
+-- COMANDOS PARA DESPLEGAR RegistrarPagoMec
+mqsiapplybaroverride -k CCB_ResgistrarPagoMEC -b /esb/instalaciones/RegistroPagoMEC/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoMEC_v1_0.bar -p /esb/instalaciones/RegistroPagoMEC/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoMEC_v1_0.properties
+mqsideploy CCBESB_DEV_NODE01 -e SVC03_ServComp_ImpuestoRegistro -a /esb/instalaciones/RegistroPagoMEC/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoMEC_v1_0.bar
+
+FWK_WebServiceTechnologyAdapter
+mqsiapplybaroverride -b C:\$user\Adaptadores\FrameworkB9\DeploymentProcess\DeploymentFiles\FNAWSTechnologyAdapter.bar -p C:\$user\Adaptadores\FrameworkB9\DeploymentProcess\Properties\FNAWSTechnologyAdapter.properties
+
+--COMNADOS PARA DESPLEGAR RegistrarPagoMPN
+mqsiapplybaroverride -k CCB_ResgistrarPagoMPN -b /esb/instalaciones/RegistrarPagoMPN/CCB_RegistrarPagoMPN_v1_0.bar -p /esb/instalaciones/RegistrarPagoMPN/CCB_RegistrarPagoMPN_v1_0.properties
+mqsideploy CCBESB_DEV_NODE01 -e SVC03_ServComp_ImpuestoRegistro -a /esb/instalaciones/RegistrarPagoMPN/CCB_RegistrarPagoMPN_v1_0.bar
+
+mqsiapplybaroverride -k CCB_ResgistrarPagoMPN -b /esb/instalaciones/RegistrarPagoMPN/CCB_RegistrarPagoMPN_v1_0.bar -p /esb/instalaciones/RegistrarPagoMPN/CCB_RegistrarPagoMPN_v1_0.properties
+mqsideploy CCBESB_DEV_NODE01 -e SVC03_ServComp_ImpuestoRegistro -a /esb/instalaciones/RegistrarPagoMPN/CCB_RegistrarPagoMPN_v1_0.bar
+
+
+-- COMANDOS PARA DESPLEGAR DUMMY CON FILE READER
+mqsiapplybaroverride -k FileReader_Dummy -b /esb/instalaciones/DummyFileReader/FileReader_Dummy.bar -p /esb/instalaciones/DummyFileReader/FileReader_Dummy.properties
+mqsideploy CCBESB_DEV_NODE01 -e DUMMY_PSE -a /esb/instalaciones/DummyFileReader/FileReader_Dummy.bar
+
+-- COMANDOS PARA DESPLEGAR ADAPTADOR DE TECNOLOGIA
+
+mqsiapplybaroverride -k FWK_WebServiceTechnologyAdapter -b /esb/instalaciones/AdaptadorTecnologiaWS_PSE_S_1.0/FWKWSTechnologyAdapter01.bar -p /esb/instalaciones/AdaptadorTecnologiaWS_PSE_S_1.0/FWKWSTechnologyAdapter.properties
+mqsideploy CCBESB_DEV_NODE01 -e WS06_PSE_TchAdapter -a /esb/instalaciones/AdaptadorTecnologiaWS_PSE_S_1.0/FWKWSTechnologyAdapter01.bar
+
+--DESPLEGAR IMAGENES
+mqsiapplybaroverride -b /esb/instalaciones/GenerarImagenes/GenerarImagenes_v1_03.bar -p /esb/instalaciones/GenerarImagenes/GenerarImagenes_v1_1.properties
+mqsideploy CCBESB_DEV_NODE01 -e SVC02_ServComp_ImpuestoRegistro -a /esb/instalaciones/GenerarImagenes/GenerarImagenes_v1_03.bar
+
+--DESPLEGAR CM
+mqsiapplybaroverride -k CCB_RegistrarPagoCM -b /esb/instalaciones/RegistroPagoCm/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoCM_v1_0.bar -p /esb/instalaciones/RegistroPagoCm/DeploymentProcess/DeploymentFiles/RegistrarPagoCM_v1.0.properties
+mqsideploy CCBESB_DEV_NODE01 -e SVC03_ServComp_ImpuestoRegistro -a /esb/instalaciones/RegistroPagoCm/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoCM_v1_0.bar
+
+mqsiapplybaroverride -k CCB_RegistrarPagoCM -b /esb/instalaciones/RegistrarPagoCM_CCB_S_1.0/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoCM_v1_0.bar -p /esb/instalaciones/RegistrarPagoCM_CCB_S_1.0/DeploymentProcess/DeploymentFiles/RegistrarPagoCM_v1.0.properties
+mqsideploy CCBESB_QAS_NODE01 -e SVC03_ServComp_ImpuestosRegistro -a /esb/instalaciones/RegistrarPagoCM_CCB_S_1.0/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoCM_v1_0.bar
+
+
+mqsiapplybaroverride -b /esb/instalaciones/GenerarImagenes_CCB_S_1.0/DeploymentProcess/DeploymentFiles/GenerarImagenes_v1_03.bar -p /esb/instalaciones/GenerarImagenes_CCB_S_1.0/DeploymentProcess/DeploymentFiles/GenerarImagenes_v1_1.properties
+mqsideploy CCBESB_QAS_NODE01 -e SVC02_ServComp_ImpuestoRegistro -a /esb/instalaciones/GenerarImagenes_CCB_S_1.0/DeploymentProcess/DeploymentFiles/GenerarImagenes_v1_03.bar
+
+
+
+mqsiapplybaroverride -k CCB_ResgistrarPagoMPN -b /esb/instalaciones/RegistrarPagoMPN_CCB_S_1.0/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoMPN_v1_0.bar -p /esb/instalaciones/RegistrarPagoMPN_CCB_S_1.0/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoMPN_v1_0.properties
+mqsideploy CCBESB_QAS_NODE01 -e SVC03_ServComp_ImpuestosRegistro -a /esb/instalaciones/RegistrarPagoMPN_CCB_S_1.0/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoMPN_v1_0.bar
+
+mqsiapplybaroverride -k CCB_ResgistrarPagoMEC -b /esb/instalaciones/RegistroPagoMec_CCB_S_1.0/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoMEC_v1_0.bar -p /esb/instalaciones/RegistroPagoMec_CCB_S_1.0/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoMEC_v1_0.properties
+mqsideploy CCBESB_QAS_NODE01 -e SVC03_ServComp_ImpuestosRegistro -a /esb/instalaciones/RegistroPagoMec_CCB_S_1.0/DeploymentProcess/DeploymentFiles/CCB_RegistrarPagoMEC_v1_0.bar
+
+-- REINICIAR GRUPOS DE EJECUCION
+mqsistopmsgflow CCBESB_DEV_NODE01 -e jimmy -m CCB_RegistrarDatosSolicitud
+mqsistartmsgflow CCBESB_DEV_NODE01 -e Jolarrot_Group
+mqsistartmsgflow CCBESB_DEV_NODE01 -e zZ_Galeno_Group_Zz
+mqsistartmsgflow CCBESB_DEV_NODE01 -e drianoan_group
+mqsistartmsgflow CCBESB_DEV_NODE01 -e FocampoGroup
+mqsideleteexecutiongroup CCBESB_DEV_NODE01 -e zZ_Galeno_Group_Zz
+mqsideleteexecutiongroup -n CCBESB_DEV_NODE01 -e jimmy
+
+mqsistopmsgflow CCBESB_DEV_NODE01 -e WS01_SedeElectronica_TchAdapter
+
+mqsistopmsgflow CCBESB_DEV_NODE01 -e jimmy -k CCB_RegistrarLiquidacionIR
+
+mqsideploy CCBESB_DEV_NODE01 -e jimmy -d CCB_RegistrarPagoIDCCB
+
+mqsistopmsgflow CCBESB_DEV_NODE01 -e Dummies -k FileReader_Dummy
+mqsilist CCBESB_DEV_NODE01 -e jimmy
+mqsilist CCBESB_DEV_NODE01 -e Dummies
+mqsilist CCBESB_DEV_NODE01 -e zZ_Galeno_Group_Zz
+mqsilist CCBESB_DEV_NODE01 -e drianoan_group
+mqsilist CCBESB_DEV_NODE01 -e Focampo_Group
+
+-- comandos para detener y eliminar aplicaciones del los grupos de ejecución 
+mqsistopmsgflow CCBESB_DEV_NODE01 -e SVC03_ServComp_ImpuestoRegistro -k CCB_ResgistrarPagoMPN
+mqsistopmsgflow CCBESB_DEV_NODE01 -e drianoan_group -k CCB_RegistrarPagoMPNServiceComponent_MsgFlow
+mqsistopmsgflow CCBESB_DEV_NODE01 -e SVC03_ServComp_ImpuestoRegistro -k CCB_RegistrarPagoRM
+mqsideploy CCBESB_DEV_NODE01 -e SVC03_ServComp_ImpuestoRegistro -d CCB_ResgistrarPagoMPN.appzip
+mqsideploy CCBESB_DEV_NODE01 -e drianoan_group -d CCB_RegistrarPagoMPNServiceComponent_MsgFlow
+mqsideploy CCBESB_DEV_NODE01 -e Focampo_Group -d CCP_RegistrarPagoMPNServiceComponent_MsgFlow
+mqsideploy CCBESB_DEV_NODE01 -e Alex_Group -d CCB_RegistrarFormularios
+mqsideploy CCBESB_DEV_NODE01 -e SVC03_ServComp_ImpuestoRegistro -d CCB_RegistrarPagoRM
+
+-- deleting execution groups
+mqsideleteexecutiongroup CCBESB_DEV_NODE01 -e ServComp_Jimmy
+mqsideleteexecutiongroup CCBESB_DEV_NODE01 -e Dummies -w 600
+mqsideleteexecutiongroup CCBESB_DEV_NODE01 -e zZ_Galeno_Group_Zz -w 600
+mqsideleteexecutiongroup CCBESB_DEV_NODE01 -e Alex_Group -w 600
+mqsideleteexecutiongroup CCBESB_DEV_NODE01 -e Focampo_Group -w 600
+
+
+-- REINIICAR BROKER
+mqsistop -i CCBESB_DEV_NODE01
+mqsistart CCBESB_DEV_NODE01
+mqsistart MB7BROKDEV1
+
+-- REINICIAR GRUPO DE EJECUCIÓN
+mqsistopmsgflow MB7BROKDEV1 -e Saf01_Fiducia_IntAdapter
+mqsistartmsgflow MB7BROKDEV3 -e Saf01_Fiducia_IntAdapter
+
+mqsilist MB7BROKDEV1 -e Str07_Masivas_TchAdapter -d2
+
+mqsistopmsgflow MB7BROKDEV1 -e Saf01_Fiducia_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Saf01_Fiducia_IntAdapter
+
+mqsistart CCBESB_DEV_NODE01
+
+mqsistopmsgflow MB7BROKDEV1 -e Mul01_Siebel_TchAdapter
+
+
+mqsistopmsgflow MB7BROKDEV1 -e Sie02_Siebel_IntAdapter
+
+
+mqsilist MB7BROKDEV1 -e Mul03_Siebel_TchAdapter -d2
+
+
+mqsilist MB7BROKDEV1 -e Mul03_Siebel_TchAdapter -d2
+
+
+mqsilist MB7BROKDEV1 -e Sie01_Siebel_IntAdapter -d2
+
+mqsistopmsgflow MB7BROKDEV1 -e Str46_CredDigital_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Str46_CredDigital_IntAdapter
+
+mqsistopmsgflow MB7BROKDEV1 -e Per01_PortalRegional_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Per01_PortalRegional_IntAdapter
+
+mqsistopmsgflow MB7BROKDEV3 -e ServComp_Fiducia
+mqsistartmsgflow MB7BROKDEV3 -e ServComp_Fiducia
+mqsilist MB7BROKDEV3 -e Saf01_Fiducia_IntAdapter
+
+mqsistopmsgflow MB7BROKDEV1 -e Si05ServiceGateway
+
+mqsistopmsgflow MB7BROKDEV1 -e Lsr01_ListasRestrictivas_IntAdapter
+
+mqsistartmsgflow MB7BROKQA1 -e Si05ServiceGateway
+
+mqsistopmsgflow MB7BROKDEV1 -e Ins01_CredDigital_TchAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Ins01_CredDigital_TchAdapter
+
+mqsireload MB7BROKDEV1 -e Cd26ServiceGateway
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_Administrativos
+mqsistartmsgflow MB7BROKDEV1 -e ServComp_Administrativos
+
+
+mqsistopmsgflow MB7BROKDEV1 -e Si05ServiceGateway
+mqsistart MB7BROKDEV1
+mqsistartmsgflow MB7BROKDEV1 -e Si05ServiceGateway
+
+
+mqsistopmsgflow MB7BROKDEV1 -e Crd02_CreditoDigital_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Crd02_CreditoDigital_IntAdapter
+
+mqsireload MB7BROKDEV1 -e Si05ServiceGateway
+mqsireload MB7BROKDEV1 -e Mul01_Siebel_TchAdapter
+mqsireload MB7BROKDEV1 -e Sie01_Siebel_IntAdapter
+mqsireload MB7BROKDEV1 -e ServComp_Consultas_TCS
+mqsistopmsgflow MB7BROKDEV1 -e Str13_Siebel81_IntAdapter
+
+mqsistopmsgflow MB7BROKDEV3 -e Str13_Siebel81_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Str13_Siebel81_IntAdapter
+
+
+mqsistopmsgflow MB7BROKDEV3 -e Str13_Siebel81_IntAdapter
+mqsistartmsgflow MB7BROKDEV3 -e Str13_Siebel81_IntAdapter
+
+
+mqsistopmsgflow MB7BROKDEV3 -e Si05ServiceGateway
+mqsistartmsgflow MB7BROKDEV3 -e Si05ServiceGateway
+
+
+mqsistopmsgflow MB7BROKDEV3 -e Si15ServiceGateway
+mqsistartmsgflow MB7BROKDEV3 -e Si15ServiceGateway
+
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital
+mqsistartmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital
+
+
+mqsistopmsgflow MB7BROKDEV3 -e Sie01_Siebel8.1Sp_IntAdapter
+mqsistartmsgflow MB7BROKDEV3 -e Sie01_Siebel8.1Sp_IntAdapter
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_Bancomex
+mqsistartmsgflow MB7BROKDEV1 -e ServComp_Bancomex
+
+mqsistopmsgflow MB7BROKDEV1 -e Consecutive
+mqsistartmsgflow MB7BROKDEV1 -e Consecutive
+
+mqsistopmsgflow MB7BROKDEV1 -e Id01ServiceGateway
+mqsistartmsgflow MB7BROKDEV1 -e Id01ServiceGateway
+ 
+mqsistopmsgflow MB7BROKDEV1 -e Id02ServiceGateway
+mqsistartmsgflow MB7BROKDEV1 -e Id02ServiceGateway
+ 
+mqsistopmsgflow MB7BROKDEV1 -e Cl01ServiceGateway
+mqsistartmsgflow MB7BROKDEV1 -e Cl01ServiceGateway
+ 
+mqsistopmsgflow MB7BROKDEV1 -e Cl02ServiceGateway
+mqsistartmsgflow MB7BROKDEV1 -e Cl02ServiceGateway
+
+
+
+-- ver estado de un grupo
+mqsilist IB9NODE -e dummies
+
+
+
+-- MIRAR BROKER
+mqsilist
+
+-- EJEMPLO DE CREAR COLAS
+runmqsc CCBESB_QAS_QM01 </esb/instalaciones/RegistroPagoMec_CCB_S_1.0/DeploymentProcess/Scripts/CreateQueueScript_v1.0.esb
+runmqsc CCBESB_DEV_QM01 </esb/instalaciones/AdaptardorIntgracionMQ_CCB_S_1.0/Deployment Process/Scripts/CreateQueueScript.esb
+runmqsc MQDEV2QM_BR </home/jmatheus/Jimmy/ConsultaCheques_TxCOCH/Scripts/CreateQueueScript_v1.0.esb
+runmqsc IB9QMGR <C:\$user\Davivienda\BUS_REGIONAL_DOCUMENTACION\DESARROLLOS\GuionesMontaje\ConsultaDetalleSeguros_TxCDSE\CreateQueueScript_v1.0.esb
+
+runmqsc DAVWMDEV1_QM
+
+mqsicreateconfigurableservice IIBDEV2_BR -c Timer -o CRADPINTSP03 -n queuePrefix -v CRINTSP3
+mqsicreateexecutiongroup IIBDEV2_BR -e CR_Int_SP03Adapter_SQLServer
+mqsisetdbparms IIBDEV2_BR -n jdbc::Seguros -u segurosbcp
+
+
+mqsicreateconfigurableservice IIBDEV2_BR -c JDBCProviders -o SegurosDB -n connectionUrlFormat,connectionUrlFormatAttr1,connectionUrlFormatAttr2,connectionUrlFormatAttr3,connectionUrlFormatAttr4,connectionUrlFormatAttr5,databaseName,databaseSchemaNames,databaseType,databaseVersion,description,environmentParms,jarsURL,jdbcProviderXASupport,maxConnectionPoolSize,portNumber,securityIdentity,serverName,type4DatasourceClassName,type4DriverClassName  -v "jdbc:jtds:sqlserver://[serverName]:[portNumber]/[connectionUrlFormatAttr1];user=[user];password=[password]","SEGUROS","","","","","default_Database_Name","useProvidedSchemaNames","SQLServer","default_Database_Version","default_Description","default_none","/var/mqsi/JDBC","false","149","3592","Seguros","166.148.20.115","net.sourceforge.jtds.jdbcx.JtdsDataSource","net.sourceforge.jtds.jdbc.Driver"
+
+
+mqsireportproperties MB7BROKQA1 -o LISTAS01DB -c JDBCProviders -r
+mqsireportproperties MB7BROKDEV1 -o LISTAS01DB -c JDBCProviders -r
+
+mqsilist MB7BROKDEV1 -e Sie05_Siebel_IntAdapter -d2
+
+mqsireportproperties MB7BROKDEV1 -o SIE05DB -c  JDBCProviders  -r
+
+
+
+________________________________________________________________________________________________
+
+runmqsc MQDEV2QM_BR </home/jmatheus/Jimmy/CtaCuentaAhorros_Tx5111/DeploymentProcess/Scripts/CreateQueueScript_v1.0.esb
+mqsideploy IIBDEV2_BR -e CR_ServComp_ConsultaSaldos -a /home/jmatheus/Jimmy/CtaCuentaAhorros_Tx5111/DeploymentProcess/DeploymentFiles/SVC_CtaSaldosAhorros5111_v1_0.bar
+
+
+mqsideploy IIBDEV2_BR -e ServComp_Jimmy -a /home/jmatheus/Jimmy/CtaCuentaAhorros_Tx5111/DeploymentProcess/DeploymentFiles/SVC_CtaSaldosAhorros5111_v1_0.bar
+
+
+
+
+
+
+
+BIP1284I: Broker 'IIBDEV2_BR' on queue manager 'MQDEV2QM_BR' is running
+
+
+mqsiapplybaroverride -k RestIntegrationAdapter_App -b
+
+-- desplegar adaptador de integracion REST_CCB
+mqsiapplybaroverride -k RestIntegrationAdapter_App -b /esb/instalaciones/Adaptador\ REST_CCB_S_1.0/Deployment\ Files/REST_IntAdapter01_v1.0.bar -p /esb/instalaciones/Adaptador\ REST_CCB_S_1.0/Properties/REST_IntegrationAdapter_01.properties
+mqsideploy CCBESB_DEV_NODE01 -e RS01_IntAdapter -a /esb/instalaciones/Adaptador\ REST_CCB_S_1.0/Deployment\ Files/REST_IntAdapter01_v1.0.bar
+
+mqsideploy /home/jmatheus/Jimmy/ConsultaCheques_TxCOCH
+mqsideploy IIBDEV2_BR -e CR_ServComp_ConsultaProductos -a /home/jmatheus/Jimmy/ConsultaCheques_TxCOCH/SVC_ConsultaChequesCOCH_v1_0.bar
+mqsideploy IIBDEV2_BR -e CR_ServComp_ConsultaSaldos -a /home/jmatheus/Jimmy/CtaCuentaAhorros_Tx5111/DeploymentProcess/DeploymentFiles/SVC_CtaSaldosAhorros5111_v1_0.bar
+
+
+
+runmqsc MQDEV2QM_BR </home/jmatheus/Jimmy/ConsultaDetalleSeguros_TxCDSE/CreateQueueScript_v1.0.esb
+
+
+
+--desplegar MQ_Integracion
+mqsiapplybaroverride -k FWK_MQIntegrationAdapter -b /esb/instalaciones/AdaptadorIntgracionMQ_CCB_S_1.0/Deployment\ Process/Deployment\ Files/FWK_MQIntegrationAdapter_1_0.bar -p /esb/instalaciones/AdaptadorIntgracionMQ_CCB_S_1.0/Deployment\ Process/Properties/FWK_IntegrationAdapterMQ.properties
+mqsideploy CCBESB_DEV_NODE01 -e MQ01_Integration_AdpInt -a /esb/instalaciones/AdaptadorIntgracionMQ_CCB_S_1.0/Deployment\ Process/Deployment\ Files/FWK_MQIntegrationAdapter_1_0.bar 
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Bancomex -a /ESB/DESPLIEGUE/ServComp_ConsultaProductosPorNit0132_CA050_v1.1.bar
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Bancomex -a /ESB/DESPLIEGUE/ServComp_ConsultaPorNitDireccionesTelefonos7501_CA050_v1.2.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Accesos_TCS -a /ESB/DESPLIEGUE/ReposicionSegundaClave0394.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Siebel81 -a /ESB/DESPLIEGUE/Siebel8_1ServiceComponent_MsgSet_v1.6.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Novedades_TCS -a /ESB/DESPLIEGUE/NovedadesTCNTCS.bar
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_Fiducia -m com.davivienda.fiducia.servicios.ConsultaFondosDeInversion6100_CA001
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/CreacionSolicitudes1213.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/CreacionTC1117.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ConsultaTasasySimuladorPrimeraCuotaCTSP.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ConsultaTasasySimuladorPrimeraCuotaCTSP_V2.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ConsultaSimulacionPlanDePagosCSPP.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ServComp_ConsultaHistoricoCifinEnAs400CHCA_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/Siebel8_1ServiceComponent_MsgSet_v1.6.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ServComp_EvaluacionSolicitudCreditoEVSC_v8_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ServComp_PostBuroPSBR_v1_0.bar
+
+
+mqsideploy MB7BROKDEV1 -e Str48_CredDigital_IntAdapter -a /ESB/DESPLIEGUE/AdaptadorStratus48Int_S_1.0/DeploymentProcess/DeploymentFiles/Str48_Siebel81_IntAdapter_v1.0.bar
+mqsiapplybaroverride  -b /ESB/config/IBM_Deploy/Str48_Siebel81_IntAdapter_v1.0.bar -p /ESB/config/IBM_Deploy/Str48_CredDigital_IntAdapter_v1.0.properties
+
+mqsideploy MB7BROKDEV1 -e Str48_CredDigital_IntAdapter -a /ESB/config/IBM_Deploy/Str48_Siebel81_IntAdapter_v1.0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v8_0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_Accesos_TCS -a /ESB/DESPLIEGUE/ReposicionPrimeraClave0396.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Fiducia -a /ESB/DESPLIEGUE/ConsultaFondosDeInversion6100_v1.8.bar
+
+
+runmqsc DAVWMDEV1_QM </ESB/DESPLIEGUE/CreateQueueScript_v1.0.esb
+runmqsc DAVWMDEV1_QM </ESB/DESPLIEGUE/VerifyQueueCreated_v1.0.esb
+
+runmqsc DAVWMDEV1_QM </ESB/DESPLIEGUE/VerifyQueueCreated_v1.0.esb
+
+
+runmqsc DAVWMDEV1_QM </ESB/DESPLIEGUE/SIEBEL/Entrega4/CreateMQ.esb
+
+
+runmqsc DAVWMDEV1_QM </ESB/DESPLIEGUE/ConsultaMovimientosDocOne_S_1.0/DeploymentProcess/Scripts/CreateMQ.esb
+mqsideploy MB7BROKDEV1 -e ServComp_Consultas_TCS -a /ESB/DESPLIEGUE/ConsultaMovimientosDocOne_S_1.0/DeploymentProcess/DeploymentFiles/ConsultaMovimientosDocOneCMDO.bar
+
+
+
+
+Ruta: \\daviviendafs\entregas$\eESB\Siebel 8.1_Fase2\Entrega5\ConsultaMovimientosDocOne_S_1.0
+ConsultaMovimientosDocOne_S_1.0
+
+cd /ESB/log/trace/mqsitransit/
+cd /ESB/log/error/mqsitransit/
+
+
+mqsiapplybaroverride -k FWK_SPIntegrationAdapter -b /home/jmatheus/Jimmy/CR_AdaptadorSP02Int_S_1.0/DeploymentProcess/DeploymentFiles/CR_Int_SP02Adapter_SQLServer_v1.0.bar -p /home/jmatheus/Jimmy/CR_AdaptadorSP02Int_S_1.0/DeploymentProcess/Properties/CR_Int_SP02Adapter_SQLServer_v1.0.properties
+
+
+mqsideploy IIBDEV2_BR -e CR_Int_SP02Adapter_SQLServer -a /home/jmatheus/Jimmy/CR_AdaptadorSP02Int_S_1.0/DeploymentProcess/DeploymentFiles/CR_Int_SP02Adapter_SQLServer_v1.0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ConsultaTasasySimuladorPrimeraCuotaCTSP_V2.0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/Oferta_Pruebas.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ServComp_EvaluacionSolicitudCreditoEVSC_v5_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/Ingresos_MsgSet_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/backup06072016/ServComp_EvaluacionSolicitudCreditoEVSC_v1_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Transaccional_TCS -a /ESB/DESPLIEGUE/CreacionSolicitudes1213.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ServComp_EvaluacionSolicitudCreditoEVSC_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/Preburo_MsgSet.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ServComp_IngresosINGR_v1_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/CreditoDigitalServiceComponent_MsgSet.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/Oferta_MsgSet.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ServComp_EvaluacionSolicitudCreditoEVSC_v1_0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/EvaluacionSolicitud/ServComp_EvaluacionSolicitudCreditoEVSC_v3_0.bar
+
+mqsiapplybaroverride -b /ESB/DESPLIEGUE/EvaluacionSolicitud/ServComp_EvaluacionSolicitudCreditoEVSC_v3_0.bar -p /ESB/DESPLIEGUE/EvaluacionSolicitud/ServComp_EvaluacionSolicitudCreditoEVSC_v1_0.properties
+
+mqsideploy MB7BROKDEV1 -e ServComp_Bancomex -a /ESB/DESPLIEGUE/ServComp_ConsultaPorNitDireccionesTelefonos7501_CA050_v1.3.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/correcionOferta.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/Oferta.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/OfertaMsgSet.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/Evaluacion.bar
+
+
+
+mqsiapplybaroverride -b /ESB/DESPLIEGUE/AdpIntWebservice_S_1.0/DeploymentProcess/DeploymentFiles/CR_Int_WS01Adapter_Multibackend_v1.0.bar -p /ESB/DESPLIEGUE/AdpIntWebservice_S_1.0/DeploymentProcess/Properties/CR_Int_WS01Adapter_Multibackend_v1.0.properties -k FWK_WebServicesIntegrationAdapter
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/DESPLIEGUE/AdpIntWebservice_S_1.0/DeploymentProcess/DeploymentFiles/CR_Int_WS01Adapter_Multibackend_v1.0.bar
+
+
+mqsicreateexecutiongroup MB7BROKDEV1 -e ServComp_Jimmy
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/DESPLIEGUE/ConsultaMovimientosDocOne_S_1.0/DeploymentProcess/DeploymentFiles/ConsultaMovimientosDocOneCMDO.bar
+mqsideploy MB7BROKDEV1 -e ServComp_FabricaCredito -a /ESB/DESPLIEGUE/FabricaCredito_S_5.0/DeploymentProcess/DeploymentFiles/ServComp_HistoricoDataCreditoIseries8000_v1_1.bar
+mqsideploy MB7BROKDEV1 -e ServComp_FabricaCredito -a /ESB/DESPLIEGUE/FabricaCredito_S_6.0/DeploymentProcess/DeploymentFiles/Credito_Iseries_MsgSet_v1_0.bar
+
+
+
+
+mqsiapplybaroverride -b /ESB/DESPLIEGUE/Str31_Bancamovil_IntAdapter_v1.0.bar -p /ESB/DESPLIEGUE/Str31_Bancamovil_IntAdapter_v2.0.properties -k SocketsIntegrationAdapter
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/CreditoDigitalServiceComponent_MsgSet.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/AperturaCuentaAhorros0300.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/AperturaCuentaCorriente5300.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ActualizarOfertaACOF.bar
+
+
+
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_Jimmy
+
+mqsistartmsgflow MB7BROKDEV3 -e Sie01_Siebel8.1Sp_IntAdapter 
+mqsistartmsgflow MB7BROKDEV1 -e Sie01_Siebel8.1Sp_IntAdapter 
+
+
+mqsistopmsgflow MB7BROKDEV1 -e Mul03_Siebel_TchAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Mul03_Siebel_TchAdapter
+
+mqsilist MB7BROKDEV1 -e ServComp_CreditoDigital -d2
+mqsilist MB7BROKDEV1 -e ServComp_Jimmy
+mqsistartmsgflow MB7BROKDEV1 -e ServComp_Jimmy
+mqsilist MB7BROKDEV1 -e Id01ServiceGateway -d2
+
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_Brecha
+mqsistartmsgflow MB7BROKDEV1 -e ServComp_Brecha
+
+mqsistopmsgflow BROKERNAME -e Si05ServiceGateway
+mqsistartmsgflow BROKERNAME -e Si05ServiceGateway
+
+
+
+mqsistartmsgflow MB7BROKDEV1 -e Str28_Bancamovil_IntAdapter
+
+
+mqsistopmsgflow MB7BROKDEV1 -e Crd01_CreditoDigital_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Crd01_CreditoDigital_IntAdapter
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_PortalRegional
+mqsistartmsgflow MB7BROKDEV1 -e ServComp_PortalRegional
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_Siebel81
+mqsistartmsgflow MB7BROKDEV1 -e ServComp_Siebel81
+
+
+mqsistopmsgflow MB7BROKDEV1 -e LogAuditError
+mqsistartmsgflow MB7BROKDEV1 -e LogAuditError
+mqsistopmsgflow MB7BROKQA1 -e Str16_Cim_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Str16_Cim_IntAdapter
+
+
+mqsireload MB7BROKDEV1 -e Si15ServiceGateway
+mqsilist MB7BROKDEV3 -e Si05ServiceGateway -d2
+mqsireload MB7BROKDEV1 -e ServComp_Consultas_TCS
+mqsireload MB7BROKDEV1 -e Str13_Siebel81_IntAdapter
+mqsireload MB7BROKQA1 -e Ise01_As400_TchAdapter
+
+mqsireload MB7BROKDEV1 -e Id01ServiceGateway
+mqsireload MB7BROKDEV1 -e Id02ServiceGateway
+mqsireload MB7BROKDEV1 -e Cl01ServiceGateway
+mqsireload MB7BROKDEV1 -e Cl02ServiceGateway
+
+mqsilist MB7BROKDEV1 -e Id01ServiceGateway -d2
+mqsilist MB7BROKDEV3 -e Ise01_As400_TchAdapter -d2
+
+mqsistopmsgflow MB7BROKDEV1 -e Cl02ServiceGateway
+mqsistartmsgflow MB7BROKDEV3 -e Ise01_As400_TchAdapter
+mqsistartmsgflow MB7BROKDEV3 -e Id02ServiceGateway
+mqsistopmsgflow MB7BROKDEV1 -e Id01ServiceGateway
+
+
+mqsireload BROKERNAME -e ESB_AuditHandler
+mqsireload BROKERNAME -e ESB_ErrorHandler
+mqsireload BROKERNAME -e ESB_LogHandler
+mqsireload BROKERNAME -e Consecutive
+mqsireload BROKERNAME -e Id02ServiceGateway
+mqsireload BROKERNAME -e Id01ServiceGateway
+
+
+mqsistopmsgflow MB7BROKDEV1 -e Kio01_Kioskos_TchAdapter
+
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital
+mqsistartmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital
+
+mqsistopmsgflow MB7BROKDEV1 -e Cd26ServiceGateway
+mqsistopmsgflow MB7BROKDEV1 -e Cd26ServiceGateway
+mqsistartmsgflow MB7BROKDEV1 -e Cd26ServiceGateway
+ 
+mqsistopmsgflow MB7BROKDEV1 -e Ins01_CredDigital_TchAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Ins01_CredDigital_TchAdapter
+ 
+mqsistopmsgflow MB7BROKDEV1 -e Crd02_CredDigital_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Crd02_CredDigital_IntAdapter
+ 
+mqsistopmsgflow MB7BROKDEV1 -e Crd01_CreditoDigital_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Crd01_CreditoDigital_IntAdapter
+
+mqsistopmsgflow MB7BROKDEV1 -e Crd03_CredDigital_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Crd03_CreditoDigital_IntAdapter
+
+mqsistopmsgflow MB7BROKDEV1 -e Str46_CredDigital_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Str46_CredDigital_IntAdapter
+ 
+mqsistopmsgflow MB7BROKDEV1 -e Ins02_As400PLSQL_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Ins02_As400PLSQL_IntAdapter
+
+ps -fea |grep 5177676
+ps -fea |grep 27525596
+
+/ESB/DESPLIEGUE/ConsultaMovimientosDocOne_C_1.1/DeploymentProcess/DeploymentFiles
+
+
+9568712
+
+NUEVOS COMANDOS
+
+
+-- comaando para listar información sobre los flujos de un grupo
+mqsilist MB7BROKDEV1 -e iSe01_FabricaCredito_IntAdapter -d2
+mqsilist MB7BROKDEV1 -e iSe01_Fiducia_IntAdapter -d2
+mqsilist MB7BROKDEV1 -e Sie01_Siebel_IntAdapter -d2
+
+mqsilist MB7BROKDEV1 -e Mul04_Siebel_TchAdapter -d2
+
+mqsilist MB7BROKDEV1 -e ServComp_FabricaCredito -d2
+
+mqsilist MB7BROKDEV1 -e Lsr01_ListasRestrictivas_IntAdapter -d2
+
+mqsilist MB7BROKDEV1 -e Str28_Bancamovil_IntAdapter
+
+mqsilist MB7BROKQA1 -e Glt02_PortalRegional_IntAdapter
+
+mqsilist BROKERNAME -e iSe01_FabricaCredito_IntAdapter -d2
+
+
+--- para consultar los puertos que consume
+mqsireportproperties MB7BROKDEV1 -e Mul03_Siebel_TchAdapter -o HTTPConnector -n port
+mqsireportproperties MB7BROKDEV1 -e Ins01_CredDigital_TchAdapter -o HTTPConnector -n port
+mqsilist MB7BROKDEV1 -e Ins01_CredDigital_TchAdapter -d2
+mqsilist MB7BROKDEV1 -e Sie01_Siebel8.1Sp_IntAdapter -d2
+mqsilist MB7BROKDEV1 -e Id06ServiceGateway -d2
+mqsilist MB7BROKDEV1 -e Ise01_As400_TchAdapter -d2
+
+mqsilist MB7BROKDEV1 -e Sie01_Siebel_IntAdapter -d2
+
+
+FWKGTWYID06 
+
+
+
+
+mqsireload MB7BROKDEV1 -e Sie01_Siebel8.1Sp_IntAdapter
+
+mqsireportproperties MB7BROKDEV1 -o Str13_Siebel75_ConfService -c TCPIPClient -r
+mqsireportproperties BROKERNAME -o Str13_Siebel75_ConfService -c TCPIPClient -r
+
+mqsireload BROKERNAME -e Ins02_As400PLSQL_IntAdapter
+
+mqsireload MB7BROKDEV3 -e Str13_Siebel81_IntAdapter
+mqsireload MB7BROKDEV1 -e Si05ServiceGateway
+mqsireload MB7BROKDEV1 -e Si15ServiceGateway
+mqsireload MB7BROKDEV1 -e Mul01_Siebel_TchAdapter
+mqsireload MB7BROKDEV1 -e Cd26ServiceGateway
+
+mqsistopmsgflow MB7BROKDEV1 -e Cd26ServiceGateway
+
+mqsireload MB7BROKDEV1 -e Consecutive
+mqsireload MB7BROKDEV1 -e ConsecutiveId02
+
+mqsireload MB7BROKDEV1 -e Crd01_CreditoDigital_IntAdapter
+mqsireload MB7BROKDEV1 -e Crd02_CreditoDigital_IntAdapter
+mqsireload MB7BROKDEV1 -e ServComp_CreditoDigital
+mqsireload MB7BROKDEV1 -e ServComp_Consultas_TCS
+mqsireload MB7BROKDEV1 -e ServComp_Transaccional_TCS
+
+
+mqsireportproperties MB7BROKDEV1 -o Str31_Bancamovil_ConfService -c TCPIPClient -r
+mqsireportproperties MB7BROKQA1 -o Str28_Bancamovil_ConfService -c TCPIPClient -r
+
+
+mqsicreateconfigurableservice MB7BROKDEV1 -c TCPIPClient -o Str28_Bancamovil_ConfService -n AlternativeAddresses,ExpireConnectionSec,Hostname,MaxReceiveRecordBytes,MaximumConnections,MinimumConnections,Port,SO_KEEPALIVE,SO_LINGER,SO_LINGER_TIMEOUT_SEC,SO_RCVBUF,SO_SNDBUF,SSLCiphers,SSLProtocol,TCP_NODELAY,TrafficClass,UseUniqueConnectionPool -v '','-1','stratus','100000000','32','16','6433','false','false','-1','65536','65536','','','false','-1','true'
+
+--- ni por el putas ir a ejecutar este comando
+mqsideleteconfigurableservice MB7BROKDEV1 -c TCPIPClient -o Str28_Bancamovil_ConfService
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ServComp_EvaluacionSolicitudCreditoEVSC_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/PI_DESPLEGADOS_FUNCIONALES/ServComp_EvaluacionSolicitudCreditoEVSC_v4_0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ConsultaTasasySimuladorPrimeraCuotaCTSP_V2.0.bar
+
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimbo -a /ESB/config/IBM_Deploy/ConsultaMovimientosDocOne_C_1.1/DeploymentProcess/DeploymentFiles/ConsultaMovimientosDocOneCMDO_v1.1.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/DESPLIEGUE/ServComp_OfertaOFRT_v1_0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_Consultas_TCS -a /ESB/DESPLIEGUE/ConsultaCuentasCanceladasYEmbargadas/ConsultaCuentasCanceladasyEmbargadas0137.bar
+runmqsc DAVWMDEV1_QM </ESB/DESPLIEGUE/ConsultaCuentasCanceladasYEmbargadas/CreateMQ.esb
+
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_FabricaCredito -m com.davivienda.creditodigital.servicios.EvaluacionSolicitudCreditoEVSC_Response.cmf
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_FabricaCredito -m com.davivienda.creditodigital.servicios.EvaluacionSolicitudCreditoEVSC_Request.cmf
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_FabricaCredito -m com.davivienda.creditodigital.servicios.EvaluacionSolicitudCreditoEVSC_TimeoutNotification.cmf
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_FabricaCredito -m com.davivienda.creditodigital.servicios.EvaluacionSolicitudCreditoEVSC_Response.cmf
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_FabricaCredito -m com.davivienda.creditodigital.servicios.EvaluacionSolicitudCreditoEVSC_ErrorTimer.cmf
+
+
+
+mqsiapplybaroverride -b /usuarios/p-eavila/AdaptadorWebService10Tch_S_1.1/Ise01_As400_TchAdapter_v1.0.bar -p /usuarios/p-eavila/AdaptadorWebService10Tch_S_1.1/Ise01_As400_TchAdapter_v1.0.properties
+
+mqsideploy MB7BROKDEV3 -e ServComDummy -a /usuarios/p-eavila/AdaptadorWebService10Tch_S_1.1/Ise01_As400_TchAdapter_v1.0.bar 
+
+
+Si señor, en el PSTDA que comente del caso 12 hago referencia a que este caso solo llega a una parte del camino que deberia recorrer todo el compuesto; como lo que se requiere con urgencia de parte de credito digital son las respuestas de los casos, eso fue lo primero que adjunte, aprovechare lo que queda de la tarde para el guion y el versionamiento del proyecto.
+
+
+------------------------------------------------------------------
+
+---listar los grupos junto los flujos desplegados en un broker----
+
+mqsilist -a -r -d2 > /ESB/config/IBM_Deploy/listaBroker.txt
+mqsilist -a -r -d2 > /ESB/config/IBM_Deploy/listaGrupos.txt
+
+mqsilist MB7BROKDEV1 -e ServComp_Siebel81 -d2 > /ESB/DESPLIEGUE/listaBroker.txt
+
+mqsilist MB7BROKDEV1 -e ServComp_CreditoDigital -d2 > /ESB/DESPLIEGUE/listaBrokerCredDigital.txt
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital -m com.davivienda.creditodigital.servicios.BuroExterno1210_Response.cmf
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital -m com.davivienda.creditodigital.servicios.BuroExterno1210_Request.cmf
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital -m com.davivienda.creditodigital.servicios.BuroInterno1209_Request.cmf
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital -m com.davivienda.creditodigital.servicios.BuroInterno1209_Response.cmf
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -d com.davivienda.creditodigital.servicios.BuroExterno1210_Response.cmf
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -d com.davivienda.creditodigital.servicios.BuroExterno1210_Request.cmf
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -d com.davivienda.creditodigital.servicios.BuroInterno1209_Request.cmf
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -d com.davivienda.creditodigital.servicios.BuroInterno1209_Response.cmf
+
+------------------------------------------------------------------
+---para matar procesos---
+topas
+
+ps -fea | grep Str13_Siebel81_IntAdapter
+
+
+ps -fea | grep ServComp_Jimmy
+
+ps -fea | grep ServComp_CreditoDigital
+
+ps -fea | grep ADP.INT.WS.IN.032
+
+ps -fea | grep 65011964
+
+ps -fea | grep 2818460
+
+ps -fea | grep 25887050
+
+ps -fea | grep 20906386
+
+ps -fea | grep 55247032
+
+mqsistop MB7BROKDEV1
+mqsistop -i MB7BROKDEV1
+mqsistop MB7BROKDEV1
+mqsistart MB7BROKDEV1
+
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_CreditoDigital -m com.davivienda.creditodigital.servicios.EvaluacionSolicitudCreditoEVSC_Request.cmf
+
+
+ps -fea | grep 42860584
+
+
+
+ kill 13369480
+ kill -9 13369480
+ 
+-- para matar procesos de las colas
+
+Entrar a: 
+runmqsc QMANAGER_NAME
+
+DISPLAY QSTATUS('SVC.2020.CA503.IN') TYPE(HANDLE)
+DISPLAY QSTATUS('StartQ') TYPE(HANDLE)
+
+DISPLAY QSTATUS('JIMBOQUEUE') TYPE(HANDLE)
+17039720
+
+DISPLAY QSTATUS('SVC.1304.LV061.IN') TYPE(HANDLE)
+
+DISPLAY QSTATUS('ADPSP.TXVALPOLDVPRO.CA503.RESP') TYPE(HANDLE)
+
+NOTA: BUSCAR EL PID Y SALIR DEL runmqsc
+
+ps -fea | grep PID -- para consultar a que grupo de ejecucion pertenece la cola
+
+
+----- para restaurar el puerto de escucha cuando sale el error 2538
+
+DEF LISTENER(LISTENER.1414)  TRPTYPE(TCP) +
+    CONTROL(QMGR)            PORT(1414) +
+    REPLACE
+
+START LISTENER(LISTENER.1414)
+ 
+ 
+__________________________________________________ 
+ 
+COMANDOS PARA RFHUTIL
+- cadena de conexión
+
+MQ.ADMON.SVRCONN/TCP/90.4.5.17(1414)
+MQ.ADMON.SVRCONN/TCP/90.4.5.17(1414)
+
+CONEXIÓN A CLEARCASE
+
+http://90.4.2.116/TeamWeb/services/Team
+
+
+ALTER QALIAS ('ADPWS.CHCA.CA002.REQ') TARGET('ADP.INT.WS.IN.025')
+
+CLEAR QLOCAL('ADPWS.CHCA.CA002.REQ')
+
+CLEAR QLOCAL('ADP.INT.WS.IN.ISE04')
+
+
+ps -fea | grep ADPWS.CHCA.CA002.REQ
+
+runmqsc DAVWMDEV1_QM
+
+DELETE QALIAS ('ADPWS.CHCA.CA002.REQ')
+
+DISPLAY QALIAS ('ADPWS.CHCA.CA002.REQ')
+
+
+ADP.INT.WS.IN.ISE04
+
+CLEAR QLOCAL('ADP.INT.WS.IN.ISE04')
+
+mqsideleteexecutiongroup MB7BROKDEV1 -e Str113_Temporal_IntAdapter
+mqsideleteexecutiongroup MB7BROKDEV1 -e servComp_Yeisson
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_Jimmy
+
+mqsistopmsgflow MB7BROKDEV1 -e Ins01_Intranet_TchAdapter
+mqsistopmsgflow MB7BROKDEV1 -e Id04ServiceGateway
+mqsistopmsgflow MB7BROKDEV1 -e Scdt20ServiceGateway
+
+mqsistopmsgflow MB7BROKDEV1 -e Mul01_Cim_IntAdapter
+mqsideploy MB7BROKDEV1 -e Rtd01_DaviproSP_IntAdapter
+
+mqsideploy MB7BROKDEV1 -e Rtd01_DaviproSP_IntAdapter -d com.davivienda.framework.adapters.sp.SPIntegrationAdapterRequest.cmf
+
+mqsistartmsgflow MB7BROKDEV1 -e Rtd01_DaviproSP_IntAdapter -m com.davivienda.framework.adapters.sp.SPIntegrationAdapterRequest.cmf
+
+
+_____________________ COMANDOS PARA DESPLEGAR EL STRATUS46 DE CREDITO DIGITAL ________________________________________________________________________________________________
+
+
+mqsicreateexecutiongroup MB7BROKDEV1 -e Str46_CredDigital_IntAdapter
+
+
+
+mqsicreateexecutiongroup MB8BROKER -e EGroup_2
+
+
+mqsichangeproperties MB7BROKDEV1 -e ServComp_CreditoDigital -o ExecutionGroup
+
+mqsilist MB7BROKDEV1 -e iSe01_FabricaCredito_IntAdapter -d2
+
+mqsistopmsgflow MB7BROKDEV1 -e Rtd01_DaviproSP_IntAdapter
+
+mqsistopmsgflow MB7BROKDEV1 -e ServComp_Jimmy -d2
+
+
+
+-------------------- comandos para crear servicio configurable de Stratus ----------------
+
+
+mqsicreateconfigurableservice MB7BROKDEV1 -c TCPIPClient -o Str48_CredDigital_ConfService -n AlternativeAddresses,ExpireConnectionSec,Hostname,MaxReceiveRecordBytes,MaximumConnections,MinimumConnections,Port,SO_KEEPALIVE,SO_LINGER,SO_LINGER_TIMEOUT_SEC,SO_RCVBUF,SO_SNDBUF,SSLCiphers,SSLProtocol,TCP_NODELAY,TrafficClass,UseUniqueConnectionPool -v '','-1','90.4.28.1','100000000','8','4','6623','false','false','-1','0','0','','','false','-1','true'
+
+mqsideleteconfigurableservice MB7BROKDEV1 -c TCPIPClient -o Str46_CredDigital_ConfService
+
+mqsireportproperties MB7BROKDEV1 -o Str48_CredDigital_ConfService -c TCPIPClient -r
+mqsireportproperties MB7BROKDEV1 -o As400CredentialsDB -c TCPIPClient -r
+mqsireportproperties MB7BROKDEV1 -o AS400Desa -c TCPIPClient -r
+
+
+mqsisetdbparms MB7BROKDEV3 -n jdbc::As400Ins02SecurityIdentity -u USRINTEG
+
+// estos son para consultar
+mqsireportdbparms MB7BROKDEV1 -n jdbc::iSeriesSecurityIdentityLab
+
+mqsireportdbparms MB7BROKDEV1 -n jdbc::As400Ins02SecurityIdentity
+
+mqsireportdbparms MB7BROKDEV1 -n jdbc::SpenderSecurityIdentity
+
+mqsireportdbparms MB7BROKDEV3 -njdbc::FicSecurityIdentity
+
+
+MB7BROKDEV1 -e Ins01_As400PLSQL_IntAdapter
+
+mqsireportproperties MB7BROKDEV1 -o SIE05DB -c  JDBCProviders  -r
+
+--- guion de montaje (el nombre viene dentro del guion de montaje) sirve para consultar el usuario de la base de datos con la que se conecta
+mqsireportdbparms MB7BROKDEV1 -n jdbc::SiebelSecurityIdentity
+
+mqsireportproperties MB7BROKDEV1 -o As400CredentialsDB -c  JDBCProviders  -r
+mqsireportdbparms MB7BROKDEV1 -n jdbc::As400CredentialsSI
+mqsireportdbparms MB7BROKDEV1 -n jdbc::CtaDigEmp01SecurityIdentity
+
+
+mqsisetdbparms MB7BROKDEV3 -n jdbc::As400CredentialsSI -u USRINTEG
+
+cnxi5integ
+
+mqsisetdbparms BROKERNAME -n jdbc::CtaDigEmp01SecurityIdentity -u DBUSER
+
+
+
+
+--- PARA MODIFICAR PROPIEDADES DEL SERVICIO CONFIGURABLE
+mqsichangeproperties BROKERNAME -o Str52_DaviCanal_ConfService -c TCPIPClient -n Port -v 6761
+
+
+
+
+_______________ NotificacionOferta
+
+
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/NotificacionOferta2020_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Postilion -a /ESB/config/IBM_Deploy/ServComp_ConsultarUsosAutTarjetasCUAT_v1_0.bar
+mqsilist -a -r -d2 > /ESB/config/IBM_Deploy/listaGrupos.txt
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_AppBilletera -a /ESB/config/IBM_Deploy/AppBilletera_S_1.0/DeploymentProcess/DeploymentFiles/ConsultaPuntosDisponibles1129.bar
+
+mqsilist MB7BROKDEV1 -e Rtd01_DaviproSP_IntAdapter
+
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Dcr01_FabricaCredito_IntAdapter_V1_0.bar -p /ESB/config/IBM_Deploy/Dcr01_FabricaCredito_IntAdapter_V1.0.properties
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/Dcr01_FabricaCredito_IntAdapter_V1_0.bar
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/CreacionTC1117.bar -p /ESB/config/IBM_Deploy/CreacionTC1117.properties
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v15_0.bar -p /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v15_0.properties
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v15_0.bar -p /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v15_0.properties
+
+
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/CreacionTC1117.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_IngresosINGR_v6_0.bar -w300
+
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v17_0.bar -p /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC.properties
+
+
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Bp31ServiceGateway_v1.0.bar -p /ESB/config/IBM_Deploy/Bp31ServiceGateway_v1.0.properties
+mqsicreateexecutiongroup MB7BROKDEV1 -e Bp31ServiceGateway
+
+mqsideleteexecutiongroup MB7BROKDEV1 -e Bpm01_Bpm_TchAdapter
+
+mqsicreateconfigurableservice MB7BROKDEV1 -c Timer -o ADPTCHWS92 -n queuePrefix -v TCHWS092
+mqsicreateconfigurableservice MB7BROKDEV1 -c Timer -o GTWPBP31 -n queuePrefix -v PXGTWY01
+mqsicreateexecutiongroup MB7BROKDEV1 -e Bpm02_Bpm_TchAdapter
+
+
+______________________________________________________ Adaptador de tecnnoligia BPM ___________________________
+
+mqsicreateconfigurableservice MB7BROKDEV1 -c Timer -o ADPTCHWS92 -n queuePrefix -v TCHWS092
+mqsicreateconfigurableservice MB7BROKDEV1 -c Timer -o GTWYCTBP92 -n queuePrefix -v PXGTWY92
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Bp31_ServiceGateway_v1.0.bar -p /ESB/config/IBM_Deploy/Bp31_ServiceGateway.properties -k FWK_ServiceGateway
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Bpm02_Bpm_TchAdapter_v1.0.bar -p /ESB/config/IBM_Deploy/Bpm02_Bpm_TchAdapter.properties -k FWK_WebServiceTechnologyAdapter
+
+
+mqsideploy MB7BROKDEV3 -e Bpm02_Bpm_TchAdapter -a /ESB/config/IBM_Deploy/Bp31_ServiceGateway_v1.0.bar
+mqsideploy MB7BROKDEV3 -e Bpm02_Bpm_TchAdapter -a /ESB/config/IBM_Deploy/Bpm02_Bpm_TchAdapter_v1.0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v17_0.bar -w200
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Ingresos_MsgSet_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/CreditoDigitalServiceComponent_MsgSet_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP.bar -w300
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroExterno1210_v7_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v9_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v10_0.bar -w200
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CDaT -a /ESB/config/IBM_Deploy/SVC_ConsultaTipoDepositoProductoSolicitud_v1.0.bar
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_IngresosINGR_v5_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/cnfig/IBM_Deploy/ServComp_PostBuroPSBR_v3_0.bar
+
+
+
+mqsiapplybaroverride -b /usuarios/p-mcasti/Sie01_Siebel8.1Sp_IntAdapter_V1.1.bar -p /usuarios/p-mcasti/Sie01_Siebel8.1Sp_IntAdapter.properties
+mqsideploy MB7BROKDEV1 -e Sie01_Siebel8.1Sp_IntAdapter -a /usuarios/p-mcasti/Sie01_Siebel8.1Sp_IntAdapter_V1.1.bar
+
+
+mqsicreateexecutiongroup MB7BROKDEV1 -e Str113_Temporal_IntAdapter -w 300
+
+mqsicreateconfigurableservice MB7BROKDEV1 -c TCPIPClient -o Str113_Temporal_ConfService -n AlternativeAddresses,ExpireConnectionSec,Hostname,MaxReceiveRecordBytes,MaximumConnections,MinimumConnections,Port,SO_KEEPALIVE,SO_LINGER,SO_LINGER_TIMEOUT_SEC,SO_RCVBUF,SO_SNDBUF,SSLCiphers,SSLProtocol,TCP_NODELAY,TrafficClass,UseUniqueConnectionPool -v '','-1','90.4.28.1','100000000','8','4','6423','false','false','-1','0','0','','','false','-1','true'
+
+
+
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Rtd01_DaviproSP_IntAdapter_v1.0.bar -p /ESB/config/IBM_Deploy/Rtd01_DaviproSP_IntAdapter_v1.0.properties
+
+mqsicreateexecutiongroup MB7BROKDEV1 -e Rtd01_DaviproSP_IntAdapter
+
+mqsideploy MB7BROKDEV1 -e Rtd01_DaviproSP_IntAdapter -a /ESB/config/IBM_Deploy/Rtd01_DaviproSP_IntAdapter_v1.0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroExterno1210_v4_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ActivacionChequeraPNConTarjeta5396.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ConsultaMovimientosDocOneCMDO_v1.1.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/NotificacionOfertaAceptadaNOAC_v1.0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v15_0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_MetaclienteMTCL_v2_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_IngresosINGR_v3_0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP_V2.0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP.bar
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP.bar -p /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP.properties
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Dp01ServiceGateway_v1.0.bar -p /ESB/config/IBM_Deploy/Dp01ServiceGateway_v1.0.properties
+
+mqsideploy MB7BROKDEV1 -e Dp01ServiceGateway -a /ESB/config/IBM_Deploy/Dp01ServiceGateway_v1.0.bar
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP_V3.0.bar -p /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP.properties
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/AsignacionTarjetaDebito0372.bar -p /ESB/config/IBM_Deploy/AsignacionTarjetaDebito0372.properties
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/AsignacionTarjetaDebito0372.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP_V3.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/NotificacionOferta2020_v1.0.bar
+
+mqsireload MB7BROKDEV1 -e Str13_Siebel81_IntAdapter
+mqsireload MB7BROKDEV1 -e Mul01_Siebel_TchAdapter
+
+mqsireportproperties MB7BROKDEV3 -e Mul01_Siebel_TchAdapter -o HTTPConnector -n port
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Rt01ServiceGateway_v1.0.bar -p /ESB/config/IBM_Deploy/Rt01ServiceGateway_v1.0.properties
+mqsideploy MB7BROKDEV1 -e Rt01ServiceGateway -a /ESB/config/IBM_Deploy/Rt01ServiceGateway_v1.0.bar
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Wsr01_Davipro_TchAdapter_v1_0.bar -p /ESB/config/IBM_Deploy/wsr01_Davipro_TchAdapter_v1_0.properties
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Ins01_CreditoDigital_TchAdapter_v1_0.bar -p /ESB/config/IBM_Deploy/Ins01_CreditoDigital_TchAdapter_v1_0.properties
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a
+
+mqsicreateconfigurableservice BROKERNAME -c Timer -o adptchwsr1 -n queuePrefix -v TCHWSRT1
+
+mqsicreateexecutiongroup MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter
+mqsicreateexecutiongroup MB7BROKDEV1 -e Rt01ServiceGateway
+mqsicreateexecutiongroup MB7BROKDEV1 -e Rtd02_DaviproWS_IntAdapter
+
+mqsireportproperties MB7BROKDEV1 -o ComIbmJVMManager -e Wsr01_Davipro_TchAdapter -n jvmMaxHeapSize
+mqsichangeproperties MB7BROKDEV1 -b httplistener -o HTTPListener -n threadPoolSize -v 4096
+mqsichangeproperties MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter -o HTTPConnector -n explicitlySetPortNumber -v 7879
+mqsicreateconfigurableservice MB7BROKDEV1 -c Timer -o adptchwsr1 -n queuePrefix -v TCHWSRT1
+
+mqsiapplybaroverride  -b /ESB/config/IBM_Deploy/Wsr01_Davipro_TchAdapter_v1_0.bar -p /ESB/config/IBM_Deploy/wsr01_Davipro_TchAdapter_v1_0.properties
+
+mqsireportproperties MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter -o HTTPConnector -r
+
+mqsideploy MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter -a /ESB/config/IBM_Deploy/Wsr01_Davipro_TchAdapter_v1_0.bar
+mqsideploy MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter -a /ESB/config/IBM_Deploy/Ins01_CreditoDigital_TchAdapter_v1_0.bar
+
+mqsiapplybaroverride  -b /ESB/config/IBM_Deploy/Rtd02_DaviproWS_IntAdapter_v1_0.bar -p /ESB/config/IBM_Deploy/Rtd02_DaviproWS_IntAdapter_v1_0.properties
+mqsideploy MB7BROKDEV1 -e Rtd02_DaviproWS_IntAdapter -a /ESB/config/IBM_Deploy/Rtd02_DaviproWS_IntAdapter_v1_0.bar
+
+mqsichangeproperties MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter -o HTTPConnector -n maxKeepAliveRequests -v 0
+mqsichangeproperties MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter -o HTTPConnector -n maxThreads -v 4096
+mqsichangeproperties MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter -o HTTPConnector -n acceptCount -v 2048
+
+mqsireload MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter
+mqsireload MB7BROKDEV1 -e Rtd01_DaviproSP_IntAdapter
+mqsireload MB7BROKDEV1 -e Rtd02_DaviproWS_IntAdapter
+mqsireload MB7BROKDEV1 -e Rt01ServiceGateway
+
+mqsichangeproperties MB7BROKDEV1 -o ComIbmJVMManager -e Wsr01_Davipro_TchAdapter -n jvmMaxHeapSize -v 1073741824
+mqsichangeproperties MB7BROKDEV1 -o ComIbmJVMManager -e Bpm02_Bpm_TchAdapter -n jvmMaxHeapSize -v 268435456
+
+mqsichangeproperties MB7BROKDEV1 -b httplistener -o HTTPListener -n threadPoolSize -v 4096
+
+mqsichangeproperties MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter -o HTTPConnector -n explicitlySetPortNumber -v 7879
+
+mqsistartmsgflow MB7BROKDEV1 -e Wsr01_Davipro_TchAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Sie01_Siebel_IntAdapter
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ActivacionChequeraPNoPJSinSolicitud5394.bar -p /ESB/config/IBM_Deploy/ActivacionChequeraPNoPJSinSolicitud5394.properties
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ActivacionChequeraPNConTarjeta5396.bar -p /ESB/config/IBM_Deploy/ActivacionChequeraPNConTarjeta5396.properties
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/CreacionSolicitudes1213.bar -p /ESB/config/IBM_Deploy/CreacionSolicitudes1213.properties
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ActivacionChequeraPNoPJSinSolicitud5394.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ActivacionChequeraPNConTarjeta5396.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v12_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Siebel81 -a /ESB/config/IBM_Deploy/ServComp_InscripcionEnLineaMonitorPlusINS_v2_0.bar
+
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/NotificacionOferta2020_v1.0.bar -p /ESB/config/IBM_Deploy/NotificacionOferta2020_v1_0.properties
+mqsireportproperties MB7BROKDEV1 -e Str06_Siebel75_TchAdapter -o AllMessageFlows -r | grep 5529
+
+mqsistopmsgflow MB7BROKDEV1 -e Crd02_CredDigital_IntAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Crd02_CredDigital_IntAdapter
+mqsistopmsgflow MB7BROKDEV1 -e Mul01_DaviCom_TchAdapter
+mqsistartmsgflow MB7BROKDEV1 -e Mul01_DaviCom_TchAdapter
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/NotificacionOferta2020_v5.0.bar
+
+
+
+-- BORRAR TODOS LOS FLUJOS
+
+mqsistopmsgflow MB7BROKDEV1 -e Str48_CredDigital_IntAdapter -j -w 500
+
+
+mqsideploy MB7BROKDEV1 -e Str48_CredDigital_IntAdapter -d com.davivienda.framework.adapters.tcp.timeout.V1_1.TimeoutNotification.cmf
+mqsideploy MB7BROKDEV1 -e Str48_CredDigital_IntAdapter -d com.davivienda.framework.adapters.tcp.V1_1.SocketsIntegrationAdapter.cmf
+mqsideploy MB7BROKDEV1 -e Str48_CredDigital_IntAdapter -d com.davivienda.framework.adapters.tcp.V1_1.SocketsIntegrationAdapterResponse.cmf
+mqsideploy MB7BROKDEV1 -e Str48_CredDigital_IntAdapter -d com.davivienda.framework.adapters.tcp.V1_1.TCPFlowStratus.cmf
+mqsideploy MB7BROKDEV1 -e Str48_CredDigital_IntAdapter -d TCPIPStreamProcessJava.jar
+
+
+ --- creando y consultando propiedades de seguridad para el broker.
+
+
+mqsisetdbparms MB7BROKDEV3 -n jdbc::As400Ins02SecurityIdentity -u USRINTEG
+
+// estos son para consultar
+mqsireportdbparms MB7BROKDEV1 -n jdbc::iSeriesSecurityIdentityLab
+
+mqsireportdbparms MB7BROKDEV1 -n jdbc::As400Ins02SecurityIdentity
+
+mqsireportdbparms MB7BROKDEV1 -n jdbc::SpenderSecurityIdentity
+
+
+MB7BROKDEV1 -e Ins01_As400PLSQL_IntAdapter
+
+mqsireportproperties MB7BROKDEV1 -o SIE05DB -c  JDBCProviders  -r
+mqsireportdbparms MB7BROKDEV1 -n jdbc::SiebelSecurityIdentity
+
+mqsireportproperties MB7BROKDEV1 -o As400CredentialsDB -c  JDBCProviders  -r
+mqsireportdbparms MB7BROKDEV1 -n jdbc::As400CredentialsSI
+
+
+mqsireportproperties MB7BROKDEV1 -o Str52_DaviCanal_ConfService -c TCPIPClient -r
+ 
+
+mqsideploy MB7BROKDEV1 -e ServComp_FabricaCredito -a /ESB/config/IBM_Deploy/ConsultaSaldosCdt2100_v1_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/Persistencia_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v8_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroExterno1210_v7_0.bar
+
+
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP.bar -p /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP.properties
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ConsultaClienteUnClickCCUC_v1.0.bar -p /ESB/config/IBM_Deploy/ConsultaClienteUnClickCCUC_v1.0.properties -r
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaClienteUnClickCCUC_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ConsultaTasasySimuladorPrimeraCuotaCTSP.bar
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/CreacionSolicitudes1213.bar -p /ESB/config/IBM_Deploy/CreacionSolicitudes1213.properties
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/CreacionSolicitudes1213.bar
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v17_0.bar -p /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC.properties
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVCS_v17_0.bar -p /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC.properties
+
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVCS_v1_0.bar -p /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC.properties
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVCS_v1_0.bar
+
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoUnClickEVCS_v1_0.bar -p /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC.properties
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoUnClickEVCS_v1_0.bar
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v20_0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_IngresosINGR_v7_0.bar
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_PreburoPREB_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_PostBuroPSBR_v4_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_IngresosINGR_v7_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_AlistamientoALIS_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_MetaclienteMTCL_v4_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_OfertaOFRT_v7_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroExterno1210_v7_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v10_0.bar -w200
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/CreacionSolicitudes1213.bar -p /ESB/config/IBM_Deploy/CreacionSolicitudes1213.properties
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/CreacionSolicitudes1213.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/GrabacionInformacionSolicitudes_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/PersistenciaCredito_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaPersistenciaCredito_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/EliminacionPersistenciaCredito_v1.0.bar
+
+mqsistopmsgflow MB7BROKDEV1 -e Sie01_Siebel8.1Sp_IntAdapter
+
+----
+reversando
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_PostBuroPSBR_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_PreburoPREB_v2_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_IngresosINGR_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Ingresos_MsgSet_v2_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/PostBuro_MsgSet_v2_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/PreBuro_MsgSet_v2_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v9_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroExterno1210_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/ServComp_MetaclienteMTCL_v3_0.bar
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVCS_v17_0.bar -p /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC.properties
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVCS_v17_0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVCS_v17_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v17_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVSC_v17_0.bar -w200
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v9_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v10_0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Oferta_MsgSet_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_OfertaOFRT_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/CreditoDigitalServiceComponent_MsgSet_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroInterno1209_v9_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_BuroExterno1210_v6_0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_PortalRegional -a /ESB/config/IBM_Deploy/ConsultaProductosPER0133_15.bar
+mqsideploy MB7BROKDEV1 -e ServComp_PortalRegional -a /ESB/config/IBM_Deploy/ConsultaProductoPer_v12.0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/EvaluadorLight_v1.0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ServComp_EvaluacionSolicitudCreditoEVCS_v17_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_PreburoPREB_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_IngresosINGR_v7_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_PostBuroPSBR_v4_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_AlistamientoALIS_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_OfertaOFRT_v7_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/ServComp_MetaclienteMTCL_v4_0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/ServComp_AlistamientoALIS_v5_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaEstadoSolicitud_v1.1.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/PreBuro_MsgSet_v2_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/ServComp_PreburoPREB_v2_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/Ingresos_MsgSet_v2_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/ServComp_IngresosINGR_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/ServComp_PostBuroPSBR_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/PostBuro_MsgSet_v2_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/ServComp_OfertaOFRT_v6_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/Oferta_MsgSet_v3_0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_CreditoDigital -a /ESB/config/IBM_Deploy/Origina/ServComp_MetaclienteMTCL_v3_0.bar
+
+
+
+
+
+
+
+despliegue _____________ LibranzaVirtual
+
+mqsideploy MB7BROKDEV1 -e ServComp_Siebel81 -a /ESB/config/IBM_Deploy/ServComp_LibranzaVirtualLIVI_v1.0.bar
+
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/Dcr01_FabricaCredito_IntAdapter_V1_0.bar
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Dcr01_FabricaCredito_IntAdapter_V1_0.bar -p /ESB/config/IBM_Deploy/Dcr01_FabricaCredito_IntAdapter_V1.0.properties
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaCampanaCredito_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsInformacionSolicitudCredito_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaInformacionSolicitudCredito_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaCampanaCredito_v1.0.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/PersistenciaCredito_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/GrabacionInformacionSolicitudes_v1.0.bar
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaPersistenciaCredito_v1.0.bar
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaEstadoSolicitud_v1.0.bar
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/TEST_AdapterSP_v1.0.bar -p /ESB/config/IBM_Deploy/Bil01_As400Sp_IntAdapter.properties
+mqsideploy MB7BROKDEV3 -e ServComp_Jimbo -a /ESB/config/IBM_Deploy/TEST_AdapterSP_v1.0.bar
+
+
+
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Jimmy/AdaptadorAS400SBil01Int_C_1.0/DeploymentProcess/DeploymentFiles/Bil01_As400Sp_IntAdapter_V2_0.bar -p /ESB/config/IBM_Deploy/Jimmy/AdaptadorAS400SBil01Int_C_1.0/DeploymentProcess/DeploymentFiles/Bil01_As400Sp_IntAdapter_V2_0.properties
+mqsideploy MB7BROKDEV1 -e Bi101_As400Sp_IntAdapter -a /ESB/config/IBM_Deploy/Jimmy/AdaptadorAS400SBil01Int_C_1.0/DeploymentProcess/DeploymentFiles/Bil01_As400Sp_IntAdapter_V2_0.bar
+mqsistopmsgflow MB7BROKDEV3 -e ServComp_Jimbo
+mqsistartmsgflow MB7BROKDEV3 -e ServComp_Jimbo
+
+netstat -Aan | grep 99.5.88.40
+
+ps auxwww | grep -i ServComp_Jimbo --- con este comando se encuentra ese codigo
+1f59ea95-6401-0000-0080-c1a65dddf443
+
+En esa ruta se busca la salida de la maquina virtual
+
+/var/mqsi/components/MB7BROKDEV3/1f59ea95-6401-0000-0080-c1a65dddf443
+
+
+CONEXION LABORATORIO
+MONITOR.SVRCONN/TCP/90.4.5.11(1414)
+
+mqsistopmsgflow MB7BROKDEV3 -e ServComp_Jimbo
+
+
+Bi101_As400Sp_IntAdapter
+
+
+ps auxwww | grep -i ServComp_FicTemporal
+add6edab-6601-0000-0080-de21677897b7
+
+
+/var/mqsi/mqsi/components/MB7BROKDEV1/add6edab-6601-0000-0080-de21677897b7
+
+mqsiapplybaroverride -b /ESB/config/IBM_Deploy/Ins01_FIC_IntAdapter_v1.0.bar -p /ESB/config/IBM_Deploy/Ins01_FIC_IntAdapter.properties
+mqsideploy MB7BROKDEV1 -e ServComp_FicTemporal -a /ESB/config/IBM_Deploy/Ins01_FIC_IntAdapter_v1.0.bar
+
+
+
+mqsideploy MB7BROKDEV1 -e ServComp_Jimmy -a /ESB/config/IBM_Deploy/ConsultaEstadoSolicitud_v1.4.bar
+
+mqsideploy MB7BROKDEV1 -e ServComp_Carolina -a /ESB/config/IBM_Deploy/SVC_AppInversionesServices_v1_1.bar
